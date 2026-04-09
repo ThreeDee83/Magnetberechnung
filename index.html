@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>R kalt / R warm Rechner</title>
+  <style>
+    :root{
+      --bg:#090d18;
+      --panel:#12192b;
+      --panel-2:#18233b;
+      --border:rgba(255,255,255,.08);
+      --text:#f4f7ff;
+      --muted:#9dabc9;
+      --accent:#79adff;
+      --accent-2:#8bc3ff;
+      --ok:#6ef0c5;
+      --danger:#ff7b8e;
+      --shadow:0 14px 36px rgba(0,0,0,.34);
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(121,173,255,.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(110,240,197,.10), transparent 25%),
+        linear-gradient(180deg, #08101d 0%, #0b1020 100%);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    .app{
+      height:100dvh;
+      padding:
+        max(12px, env(safe-area-inset-top))
+        12px
+        max(12px, env(safe-area-inset-bottom))
+        12px;
+      display:grid;
+      grid-template-rows:auto auto 1fr auto;
+      gap:10px;
+      max-width:480px;
+      margin:0 auto;
+    }
+
+    .header{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:6px 2px 0;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(1.15rem, 2.7vw, 1.35rem);
+      line-height:1.1;
+      letter-spacing:.01em;
+    }
+
+    .sub{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:.8rem;
+      line-height:1.25;
+    }
+
+    .segmented{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      position:relative;
+      width:132px;
+      height:46px;
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:4px;
+      box-shadow:var(--shadow);
+    }
+
+    .segmented input{display:none}
+
+    .segmented label{
+      z-index:2;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      font-size:.96rem;
+      color:#b6c4e3;
+      border-radius:999px;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .slider{
+      position:absolute;
+      top:4px;
+      left:4px;
+      width:calc(50% - 4px);
+      height:calc(100% - 8px);
+      border-radius:999px;
+      background:linear-gradient(135deg, var(--accent), var(--accent-2));
+      transition:transform .22s ease;
+      box-shadow:0 8px 20px rgba(121,173,255,.28);
+    }
+
+    #al:checked ~ .slider{transform:translateX(100%)}
+    #cu:checked ~ label[for="cu"],
+    #al:checked ~ label[for="al"]{color:#08111f}
+
+    .info-bar{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:10px 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      box-shadow:var(--shadow);
+      min-height:48px;
+    }
+
+    .info-bar .left{
+      color:var(--muted);
+      font-size:.8rem;
+    }
+
+    .info-bar .right{
+      font-weight:800;
+      color:#deebff;
+      font-size:.86rem;
+      white-space:nowrap;
+    }
+
+    .main{
+      display:grid;
+      grid-template-rows:1fr 1fr;
+      gap:10px;
+      min-height:0;
+    }
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      min-height:0;
+      overflow:hidden;
+      display:grid;
+      grid-template-rows:auto 1fr;
+    }
+
+    .panel-title{
+      padding:12px 14px 8px;
+      font-size:.84rem;
+      font-weight:800;
+      color:#dbe7ff;
+      letter-spacing:.02em;
+    }
+
+    .input-grid,
+    .result-grid{
+      padding:0 10px 10px;
+      display:grid;
+      gap:10px;
+      min-height:0;
+    }
+
+    .input-grid{
+      grid-template-columns:1fr 1fr;
+      align-content:stretch;
+    }
+
+    .field{
+      background:#0d1528;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:10px;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      min-height:0;
+    }
+
+    .field label{
+      font-size:.78rem;
+      color:var(--muted);
+      margin-bottom:7px;
+      font-weight:600;
+    }
+
+    .field input{
+      width:100%;
+      min-width:0;
+      border:none;
+      outline:none;
+      background:#131d34;
+      border:1px solid rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:14px;
+      padding:14px 12px;
+      font-size:1.08rem;
+      font-weight:800;
+      appearance:textfield;
+    }
+
+    .field input::placeholder{color:#6f7e9f;font-weight:600}
+
+    .result-grid{
+      grid-template-columns:1fr 1fr;
+      align-content:stretch;
+    }
+
+    .result{
+      background:#0d1528;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:12px 12px 10px;
+      display:grid;
+      align-content:center;
+      gap:7px;
+      text-align:left;
+      min-height:0;
+    }
+
+    .result.wide{grid-column:1/-1}
+
+    .result .label{
+      color:var(--muted);
+      font-size:.78rem;
+      font-weight:600;
+    }
+
+    .result .value{
+      font-size:clamp(1.08rem, 3.7vw, 1.35rem);
+      font-weight:900;
+      line-height:1.05;
+      letter-spacing:.01em;
+      color:#f7faff;
+      word-break:break-word;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    button{
+      border:none;
+      border-radius:18px;
+      min-height:54px;
+      font-size:1rem;
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+    }
+
+    .primary{
+      color:#07101d;
+      background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    .secondary{
+      color:#dce8ff;
+      background:#18233b;
+      border:1px solid rgba(255,255,255,.07);
+    }
+
+    .error{
+      display:none;
+      color:var(--danger);
+      font-size:.8rem;
+      padding:0 4px;
+      margin-top:-2px;
+    }
+
+    @media (max-height: 760px){
+      .app{gap:8px;padding-top:max(10px, env(safe-area-inset-top))}
+      .segmented{height:42px;width:124px}
+      .panel-title{padding:10px 12px 7px}
+      .field input{padding:12px 10px;font-size:1rem}
+      .result .value{font-size:1.03rem}
+      button{min-height:50px}
+    }
+
+    @media (min-width: 430px){
+      .app{padding-left:14px;padding-right:14px}
+      .field input{font-size:1.12rem}
+      .result .value{font-size:1.3rem}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="header">
+      <div>
+        <h1>Kalt- / Warmrechner</h1>
+        <p class="sub">R kalt, P kalt, R warm, P warm und Temperaturänderung</p>
+      </div>
+
+      <div class="segmented">
+        <input type="radio" name="material" id="cu" checked />
+        <label for="cu">Kupfer</label>
+        <input type="radio" name="material" id="al" />
+        <label for="al">Alu</label>
+        <div class="slider"></div>
+      </div>
+    </section>
+
+    <section class="info-bar">
+      <div class="left">Leistung in kW · 2 Nachkommastellen</div>
+      <div class="right" id="alphaInfo">α = 0,00393</div>
+    </section>
+
+    <section class="main">
+      <section class="panel">
+        <div class="panel-title">Eingaben</div>
+        <div class="input-grid">
+          <div class="field">
+            <label for="uc">U kalt (V)</label>
+            <input id="uc" type="number" step="any" inputmode="decimal" placeholder="z. B. 12" />
+          </div>
+          <div class="field">
+            <label for="ic">I kalt (A)</label>
+            <input id="ic" type="number" step="any" inputmode="decimal" placeholder="z. B. 2,5" />
+          </div>
+          <div class="field">
+            <label for="uw">U warm (V)</label>
+            <input id="uw" type="number" step="any" inputmode="decimal" placeholder="z. B. 12" />
+          </div>
+          <div class="field">
+            <label for="iw">I warm (A)</label>
+            <input id="iw" type="number" step="any" inputmode="decimal" placeholder="z. B. 1,9" />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Ergebnisse</div>
+        <div class="result-grid">
+          <div class="result">
+            <div class="label">R kalt</div>
+            <div class="value" id="rc">— Ω</div>
+          </div>
+          <div class="result">
+            <div class="label">P kalt</div>
+            <div class="value" id="pc">— kW</div>
+          </div>
+          <div class="result">
+            <div class="label">R warm</div>
+            <div class="value" id="rw">— Ω</div>
+          </div>
+          <div class="result">
+            <div class="label">P warm</div>
+            <div class="value" id="pw">— kW</div>
+          </div>
+          <div class="result wide">
+            <div class="label">Temperaturänderung ΔT</div>
+            <div class="value" id="dt">— °C</div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="error" id="errorMsg">Bitte nur positive Werte eingeben. Der Strom darf nicht 0 sein.</div>
+
+    <section class="actions">
+      <button class="primary" id="calcBtn">Berechnen</button>
+      <button class="secondary" id="resetBtn">Zurücksetzen</button>
+    </section>
+  </main>
+
+  <script>
+    const alphaValues = { cu: 0.00393, al: 0.00429 };
+
+    const els = {
+      uc: document.getElementById('uc'),
+      ic: document.getElementById('ic'),
+      uw: document.getElementById('uw'),
+      iw: document.getElementById('iw'),
+      rc: document.getElementById('rc'),
+      pc: document.getElementById('pc'),
+      rw: document.getElementById('rw'),
+      pw: document.getElementById('pw'),
+      dt: document.getElementById('dt'),
+      alphaInfo: document.getElementById('alphaInfo'),
+      errorMsg: document.getElementById('errorMsg'),
+      calcBtn: document.getElementById('calcBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      cu: document.getElementById('cu'),
+      al: document.getElementById('al')
+    };
+
+    function activeMaterial(){
+      return els.al.checked ? 'al' : 'cu';
+    }
+
+    function updateAlphaInfo(){
+      const a = alphaValues[activeMaterial()];
+      els.alphaInfo.textContent = 'α = ' + a.toLocaleString('de-DE', {
+        minimumFractionDigits: 5,
+        maximumFractionDigits: 5
+      });
+    }
+
+    function formatOhm(v){
+      if(!isFinite(v)) return '— Ω';
+      return v.toLocaleString('de-DE', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 4
+      }) + ' Ω';
+    }
+
+    function formatKW(v){
+      if(!isFinite(v)) return '— kW';
+      return (v / 1000).toLocaleString('de-DE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + ' kW';
+    }
+
+    function formatTemp(v){
+      if(!isFinite(v)) return '— °C';
+      return v.toLocaleString('de-DE', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+      }) + ' °C';
+    }
+
+    function resetResults(){
+      els.rc.textContent = '— Ω';
+      els.pc.textContent = '— kW';
+      els.rw.textContent = '— Ω';
+      els.pw.textContent = '— kW';
+      els.dt.textContent = '— °C';
+    }
+
+    function showError(show){
+      els.errorMsg.style.display = show ? 'block' : 'none';
+    }
+
+    function calculate(){
+      const uc = parseFloat(els.uc.value);
+      const ic = parseFloat(els.ic.value);
+      const uw = parseFloat(els.uw.value);
+      const iw = parseFloat(els.iw.value);
+
+      if([uc, ic, uw, iw].some(v => Number.isNaN(v))){
+        resetResults();
+        showError(false);
+        return;
+      }
+
+      if([uc, ic, uw, iw].some(v => v <= 0)){
+        resetResults();
+        showError(true);
+        return;
+      }
+
+      const rCold = uc / ic;
+      const pCold = uc * ic;
+      const rWarm = uw / iw;
+      const pWarm = uw * iw;
+      const alpha = alphaValues[activeMaterial()];
+      const deltaT = (rWarm - rCold) / (alpha * rCold);
+
+      els.rc.textContent = formatOhm(rCold);
+      els.pc.textContent = formatKW(pCold);
+      els.rw.textContent = formatOhm(rWarm);
+      els.pw.textContent = formatKW(pWarm);
+      els.dt.textContent = formatTemp(deltaT);
+
+      showError(false);
+    }
+
+    function resetForm(){
+      els.uc.value = '';
+      els.ic.value = '';
+      els.uw.value = '';
+      els.iw.value = '';
+      resetResults();
+      showError(false);
+      els.uc.focus();
+    }
+
+    [els.uc, els.ic, els.uw, els.iw].forEach(el => {
+      el.addEventListener('input', calculate);
+      el.addEventListener('keydown', e => {
+        if(e.key === 'Enter') calculate();
+      });
+    });
+
+    [els.cu, els.al].forEach(el => {
+      el.addEventListener('change', () => {
+        updateAlphaInfo();
+        calculate();
+      });
+    });
+
+    els.calcBtn.addEventListener('click', calculate);
+    els.resetBtn.addEventListener('click', resetForm);
+
+    updateAlphaInfo();
+    resetResults();
+  </script>
+</body>
+</html>
