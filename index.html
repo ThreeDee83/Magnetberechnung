@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Magnetberechnung</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  background:radial-gradient(circle at 30% 20%, #1a2a6c, #0b1020 60%);
+  color:#fff;
+  min-height:100dvh;
+  display:flex;
+  justify-content:center;
+}
+
+.app{
+  width:100%;
+  max-width:480px;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:clamp(12px,2vh,20px);
+  gap:clamp(12px,2vh,18px);
+}
+
+h1{
+  text-align:center;
+  font-size:clamp(1.2rem,3vw,1.6rem);
+}
+
+.frame{
+  width:100%;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;
+  padding:clamp(10px,2vh,16px);
+  background:rgba(255,255,255,.04);
+  backdrop-filter:blur(12px);
+  overflow:hidden;
+}
+
+.segmented{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  width:100%;
+}
+.segmented input{display:none}
+.segmented label{
+  min-width:0;
+  width:100%;
+  padding:clamp(12px,2vh,16px);
+  border-radius:16px;
+  text-align:center;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+  cursor:pointer;
+  transition:background .2s, color .2s;
+}
+.segmented input:checked + label{
+  background:linear-gradient(135deg,#6ea8ff,#00ffc3);
+  color:#000;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(8px,1.5vw,14px);
+  width:100%;
+}
+.row + .row{
+  margin-top:clamp(12px,2vh,20px);
+}
+
+/* Visually hidden labels for screen readers */
+.sr-only{
+  position:absolute;
+  width:1px;height:1px;
+  padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);
+  white-space:nowrap;border:0;
+}
+
+input[type="text"]{
+  min-width:0;
+  width:100%;
+  padding:clamp(12px,2vh,18px);
+  border-radius:14px;
+  border:1px solid transparent;
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  text-align:center;
+  font-size:clamp(0.9rem,2.5vw,1.1rem);
+  outline:none;
+  appearance:none;
+  -webkit-appearance:none;
+  transition:border-color .2s;
+}
+input[type="text"]::placeholder{
+  color:rgba(255,255,255,.55);
+}
+input[type="text"]:focus{
+  border-color:rgba(110,168,255,.6);
+}
+input[type="text"].invalid{
+  border-color:rgba(255,100,100,.6);
+}
+
+.hint{
+  font-size:0.78rem;
+  color:rgba(255,200,100,.85);
+  text-align:center;
+  margin-top:clamp(8px,1.5vh,12px);
+  min-height:1.2em;
+  transition:opacity .2s;
+}
+
+.results{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(10px,1.5vw,16px);
+  width:100%;
+}
+
+.result{
+  min-width:0;
+  padding:clamp(14px,2vh,22px);
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  text-align:center;
+}
+
+.big{grid-column:1/-1}
+
+.label{
+  font-size:clamp(0.75rem,2vw,0.9rem);
+  color:rgba(255,255,255,.6);
+}
+
+.value{
+  font-size:clamp(1.2rem,4vw,1.8rem);
+  margin-top:6px;
+  word-break:break-word;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <h1>Magnetberechnung</h1>
+
+  <div class="frame">
+    <div class="segmented">
+      <input type="radio" name="mat" id="cu" checked>
+      <label for="cu">Kupfer</label>
+      <input type="radio" name="mat" id="al">
+      <label for="al">Aluminium</label>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="row">
+      <label class="sr-only" for="uc">Spannung kalt (V)</label>
+      <input id="uc" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="U kalt (V)">
+      <label class="sr-only" for="ic">Strom kalt (A)</label>
+      <input id="ic" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="I kalt (A)">
+    </div>
+    <div class="row">
+      <label class="sr-only" for="uw">Spannung warm (V)</label>
+      <input id="uw" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="U warm (V)">
+      <label class="sr-only" for="iw">Strom warm (A)</label>
+      <input id="iw" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="I warm (A)">
+    </div>
+    <div class="hint" id="hint" aria-live="polite"></div>
+  </div>
+
+  <div class="frame">
+    <div class="results">
+      <div class="result"><div class="label">R kalt</div><div class="value" id="rc">–</div></div>
+      <div class="result"><div class="label">P kalt</div><div class="value" id="pc">–</div></div>
+      <div class="result"><div class="label">R warm</div><div class="value" id="rw">–</div></div>
+      <div class="result"><div class="label">P warm</div><div class="value" id="pw">–</div></div>
+      <div class="result big"><div class="label">ΔT</div><div class="value" id="dt">–</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Temperaturkoeffizienten
+const ALPHA_CU = 0.00393;
+const ALPHA_AL = 0.00429;
+
+// DOM-Referenzen – Eingaben
+const ucEl = document.getElementById('uc');
+const icEl = document.getElementById('ic');
+const uwEl = document.getElementById('uw');
+const iwEl = document.getElementById('iw');
+const inputs = [ucEl, icEl, uwEl, iwEl];
+
+// DOM-Referenzen – Ausgaben
+const rcEl  = document.getElementById('rc');
+const rwEl  = document.getElementById('rw');
+const pcEl  = document.getElementById('pc');
+const pwEl  = document.getElementById('pw');
+const dtEl  = document.getElementById('dt');
+const hint  = document.getElementById('hint');
+
+function parseNum(value) {
+  return parseFloat(String(value).replace(',', '.'));
+}
+
+function kW(v) {
+  return (v / 1000).toFixed(2) + ' kW';
+}
+
+function alpha() {
+  return document.getElementById('al').checked ? ALPHA_AL : ALPHA_CU;
+}
+
+function resetResults() {
+  [rcEl, rwEl, pcEl, pwEl, dtEl].forEach(el => el.textContent = '–');
+}
+
+function setHint(msg) {
+  hint.textContent = msg;
+}
+
+function calc() {
+  const uc = parseNum(ucEl.value);
+  const ic = parseNum(icEl.value);
+  const uw = parseNum(uwEl.value);
+  const iw = parseNum(iwEl.value);
+
+  // Fehlende Felder
+  const allFilled = inputs.every(el => el.value.trim() !== '');
+  if (!allFilled) {
+    resetResults();
+    setHint(inputs.some(el => el.value.trim() !== '') ? 'Bitte alle Felder ausfüllen.' : '');
+    return;
+  }
+
+  // Ungültige (NaN) Werte
+  if ([uc, ic, uw, iw].some(isNaN)) {
+    resetResults();
+    setHint('Ungültige Eingabe – bitte nur Zahlen eingeben.');
+    inputs.forEach(el => {
+      el.classList.toggle('invalid', isNaN(parseNum(el.value)));
+    });
+    return;
+  }
+
+  // Negative oder Null-Werte
+  if ([uc, ic, uw, iw].some(v => v <= 0)) {
+    resetResults();
+    setHint('Alle Werte müssen größer als 0 sein.');
+    inputs.forEach(el => {
+      el.classList.toggle('invalid', parseNum(el.value) <= 0);
+    });
+    return;
+  }
+
+  // Alles ok – Klassen zurücksetzen
+  inputs.forEach(el => el.classList.remove('invalid'));
+  setHint('');
+
+  const rc = uc / ic;
+  const rw = uw / iw;
+  const dt = (1 / alpha()) * ((rw / rc) - 1);
+
+  rcEl.textContent = rc.toFixed(3) + ' Ω';
+  rwEl.textContent = rw.toFixed(3) + ' Ω';
+  pcEl.textContent = kW(uc * ic);
+  pwEl.textContent = kW(uw * iw);
+  dtEl.textContent = dt.toFixed(1) + ' °C';
+}
+
+inputs.forEach(el => el.addEventListener('input', calc));
+document.getElementById('cu').addEventListener('change', calc);
+document.getElementById('al').addEventListener('change', calc);
+</script>
+
+</body>
+</html>
