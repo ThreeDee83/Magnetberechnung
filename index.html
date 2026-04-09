@@ -9,7 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 
 body{
-  font-family:system-ui;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   background:radial-gradient(circle at 30% 20%, #1a2a6c, #0b1020 60%);
   color:#fff;
   min-height:100dvh;
@@ -17,7 +17,6 @@ body{
   justify-content:center;
 }
 
-/* AUTOSCALE HEIGHT */
 .app{
   width:100%;
   max-width:480px;
@@ -34,23 +33,26 @@ h1{
   font-size:clamp(1.2rem,3vw,1.6rem);
 }
 
-/* FRAME */
 .frame{
+  width:100%;
   border:1px solid rgba(255,255,255,.12);
   border-radius:20px;
   padding:clamp(10px,2vh,16px);
   background:rgba(255,255,255,.04);
   backdrop-filter:blur(12px);
+  overflow:hidden;
 }
 
-/* SEGMENTED */
 .segmented{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:8px;
+  width:100%;
 }
 .segmented input{display:none}
 .segmented label{
+  min-width:0;
+  width:100%;
   padding:clamp(12px,2vh,16px);
   border-radius:16px;
   text-align:center;
@@ -63,17 +65,19 @@ h1{
   color:#000;
 }
 
-/* INPUTS */
 .row{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:clamp(8px,1.5vw,14px);
+  width:100%;
 }
 .row + .row{
   margin-top:clamp(12px,2vh,20px);
 }
 
 input{
+  min-width:0;
+  width:100%;
   padding:clamp(12px,2vh,18px);
   border-radius:14px;
   border:none;
@@ -81,16 +85,23 @@ input{
   color:#fff;
   text-align:center;
   font-size:clamp(0.9rem,2.5vw,1.1rem);
+  outline:none;
+  appearance:none;
+  -webkit-appearance:none;
+}
+input::placeholder{
+  color:rgba(255,255,255,.55);
 }
 
-/* RESULTS */
 .results{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
   gap:clamp(10px,1.5vw,16px);
+  width:100%;
 }
 
 .result{
+  min-width:0;
   padding:clamp(14px,2vh,22px);
   border-radius:16px;
   background:rgba(255,255,255,.05);
@@ -102,6 +113,7 @@ input{
 .value{
   font-size:clamp(1.2rem,4vw,1.8rem);
   margin-top:6px;
+  word-break:break-word;
 }
 </style>
 </head>
@@ -123,12 +135,12 @@ input{
 
 <div class="frame">
   <div class="row">
-    <input id="uc" placeholder="U kalt">
-    <input id="ic" placeholder="I kalt">
+    <input id="uc" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="U kalt">
+    <input id="ic" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="I kalt">
   </div>
   <div class="row">
-    <input id="uw" placeholder="U warm">
-    <input id="iw" placeholder="I warm">
+    <input id="uw" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="U warm">
+    <input id="iw" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" placeholder="I warm">
   </div>
 </div>
 
@@ -147,9 +159,12 @@ input{
 <script>
 function kW(v){return (v/1000).toFixed(2)+" kW";}
 function alpha(){return document.getElementById('al').checked ? 0.00429 : 0.00393;}
+function parseNum(value){
+  return parseFloat(String(value).replace(',', '.'));
+}
 
 function calc(){
-  let uc=+ucEl.value, ic=+icEl.value, uw=+uwEl.value, iw=+iwEl.value;
+  let uc=parseNum(ucEl.value), ic=parseNum(icEl.value), uw=parseNum(uwEl.value), iw=parseNum(iwEl.value);
   if(!uc||!ic||!uw||!iw) return;
 
   let rc=uc/ic;
