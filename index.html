@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Magnetberechnung</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:system-ui;
+  background:radial-gradient(circle at 30% 20%, #1a2a6c, #0b1020 60%);
+  color:#fff;
+}
+
+/* FULL AUTOSCALE */
+.app{
+  width:100vw;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  padding:clamp(10px, 2vw, 18px);
+  gap:clamp(10px,2vh,18px);
+}
+
+/* TITLE */
+h1{
+  text-align:center;
+  font-size:clamp(1.2rem,3vw,1.6rem);
+}
+
+/* INPUT ROWS */
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(8px,1.5vw,14px);
+}
+
+input{
+  padding:clamp(12px,2vh,18px);
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  font-size:clamp(0.9rem,2.5vw,1.1rem);
+  text-align:center;
+}
+
+/* RESULTS SCALE */
+.results{
+  flex:1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(10px,1.5vw,16px);
+}
+
+.result{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:rgba(255,255,255,.06);
+  border-radius:18px;
+  padding:clamp(14px,2vh,24px);
+}
+
+.big{grid-column:1/-1}
+
+.label{
+  font-size:clamp(0.8rem,2vw,1rem);
+  color:#bbb;
+}
+
+.value{
+  font-size:clamp(1.2rem,4vw,2rem);
+  font-weight:bold;
+  margin-top:6px;
+}
+
+/* BUTTON */
+button{
+  padding:clamp(14px,2vh,20px);
+  border:none;
+  border-radius:16px;
+  font-weight:bold;
+  background:linear-gradient(135deg,#6ea8ff,#00ffc3);
+  color:#000;
+  font-size:clamp(1rem,2.5vw,1.2rem);
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<h1>Magnetberechnung</h1>
+
+<div class="row">
+  <input id="uc" placeholder="U kalt">
+  <input id="ic" placeholder="I kalt">
+</div>
+
+<div class="row">
+  <input id="uw" placeholder="U warm">
+  <input id="iw" placeholder="I warm">
+</div>
+
+<div class="results">
+  <div class="result"><div class="label">R kalt</div><div class="value" id="rc">-</div></div>
+  <div class="result"><div class="label">P kalt</div><div class="value" id="pc">-</div></div>
+  <div class="result"><div class="label">R warm</div><div class="value" id="rw">-</div></div>
+  <div class="result"><div class="label">P warm</div><div class="value" id="pw">-</div></div>
+  <div class="result big"><div class="label">ΔT</div><div class="value" id="dt">-</div></div>
+</div>
+
+<button onclick="calc()">Berechnen</button>
+
+</div>
+
+<script>
+function kW(v){return (v/1000).toFixed(2)+" kW";}
+
+function calc(){
+  let uc=+ucEl.value, ic=+icEl.value, uw=+uwEl.value, iw=+iwEl.value;
+  if(!uc||!ic||!uw||!iw) return;
+
+  let rc=uc/ic;
+  let rw=uw/iw;
+
+  rcEl.innerText=rc.toFixed(3)+" Ω";
+  rwEl.innerText=rw.toFixed(3)+" Ω";
+
+  pcEl.innerText=kW(uc*ic);
+  pwEl.innerText=kW(uw*iw);
+
+  let dt=(rw-rc)/(0.00393*rc);
+  dtEl.innerText=dt.toFixed(1)+" °C";
+}
+
+const ucEl=document.getElementById('uc');
+const icEl=document.getElementById('ic');
+const uwEl=document.getElementById('uw');
+const iwEl=document.getElementById('iw');
+
+const rcEl=document.getElementById('rc');
+const rwEl=document.getElementById('rw');
+const pcEl=document.getElementById('pc');
+const pwEl=document.getElementById('pw');
+const dtEl=document.getElementById('dt');
+</script>
+
+</body>
+</html>
